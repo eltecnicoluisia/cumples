@@ -1,0 +1,137 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  username     String   @unique
+  email        String   @unique
+  passwordHash String
+  fullName     String?
+  phone        String?
+  role         String   @default("USER") // ADMIN, USER, EDITOR, VIEWER
+  plan         String   @default("FREE") // FREE, PRO, ENTERPRISE
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  persons      Person[]
+  trees        Tree[]
+}
+
+model Tree {
+  id          String   @id @default(uuid())
+  userId      String
+  name        String   // Ej: "Árbol Genealógico Principal", "Linaje Paterno Uzcátegui", "Linaje Materno Olivo"
+  description String?
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  persons     Person[]
+}
+
+model Person {
+  id             String   @id @default(uuid())
+  userId         String   @default("system")
+  treeId         String?
+  firstName      String
+  middleName     String?
+  lastName       String
+  secondLastName String?
+  maidenName     String?
+  nickname     String?
+  gender       String   @default("UNKNOWN") // MALE, FEMALE, OTHER, UNKNOWN
+  isAlive      Boolean  @default(true)
+  birthDate    String?  // Formato YYYY-MM-DD
+  birthPlace   String?
+  deathDate    String?  // Formato YYYY-MM-DD
+  deathPlace   String?
+  burialPlace  String?
+  causeOfDeath String?
+  avatarUrl    String?
+  biography    String?
+  profession   String?
+  contactPhone String?
+  contactEmail String?
+  notes        String?
+  generation   Int?     @default(1)
+  kinshipRole  String?  // abuelo_pat, abuela_pat, abuelo_mat, abuela_mat, padre, madre, yo, etc.
+  merkleHash   String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user         User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tree         Tree?    @relation(fields: [treeId], references: [id], onDelete: SetNull)
+
+  // Relaciones como Hijo (quiénes son sus padres)
+  parentRelations Relation[]       @relation("ChildRelation")
+  // Relaciones como Padre/Madre (quiénes son sus hijos)
+  childRelations  Relation[]       @relation("ParentRelation")
+
+  // Matrimonios / Parejas
+  spousesAsFirst  SpouseRelation[] @relation("Spouse1Relation")
+  spousesAsSecond SpouseRelation[] @relation("Spouse2Relation")
+
+  // Eventos / Hitos Especiales (Graduación, Bautizo, Logros, etc.)
+  customEvents    CustomEvent[]
+}
+
+model CustomEvent {
+  id          String   @id @default(uuid())
+  personId    String
+  title       String   // Ej: Graduación de Médico, Bautizo, Logro Profesional
+  eventType   String   @default("CUSTOM") // GRADUATION, BAPTISM, ACHIEVEMENT, MEMORIAL, CUSTOM
+  eventDate   String   // Formato YYYY-MM-DD
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  person      Person   @relation(fields: [personId], references: [id], onDelete: Cascade)
+}
+
+model Relation {
+  id        String   @id @default(uuid())
+  parentId  String
+  childId   String
+  type      String   @default("BIOLOGICAL") // BIOLOGICAL, ADOPTIVE, FOSTER, STEP
+  createdAt DateTime @default(now())
+
+  parent Person @relation("ParentRelation", fields: [parentId], references: [id], onDelete: Cascade)
+  child  Person @relation("ChildRelation", fields: [childId], references: [id], onDelete: Cascade)
+
+  @@unique([parentId, childId])
+}
+
+model SpouseRelation {
+  id           String   @id @default(uuid())
+  person1Id    String
+  person2Id    String
+  type         String   @default("MARRIED") // MARRIED, PARTNER, DIVORCED, WIDOWED, SEPARATED
+  marriageDate String?
+  divorceDate  String?
+  notes        String?
+  createdAt    DateTime @default(now())
+
+  person1 Person @relation("Spouse1Relation", fields: [person1Id], references: [id], onDelete: Cascade)
+  person2 Person @relation("Spouse2Relation", fields: [person2Id], references: [id], onDelete: Cascade)
+
+  @@unique([person1Id, person2Id])
+}
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  action      String   // CREATE, UPDATE, DELETE, IMPORT, AUTH
+  entity      String   // PERSON, RELATION, SPOUSE, USER
+  entityId    String
+  details     String
+  performedBy String?  @default("system")
+  hash        String?
+  timestamp   DateTime @default(now())
+}

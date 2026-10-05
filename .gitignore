@@ -1,0 +1,42 @@
+# Dependencies
+node_modules/
+*/node_modules/
+
+# Production builds
+dist/
+*/dist/
+build/
+client-dist/
+
+# SQLite & Data files
+data/
+*.sqlite
+*.sqlite-journal
+database.sqlite
+*.db
+
+# Logs & temp files
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+project.tar.gz
+__pycache__/
+*.pyc
+*.py
+scripts/
+
+# Environment & credentials
+.env
+.env.local
+.env.*.local
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE & Editor
+.vscode/
+.idea/
+.gemini/

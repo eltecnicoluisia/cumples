@@ -1,0 +1,20 @@
+services:
+  geneatrack:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: geneatrack_app
+    restart: unless-stopped
+    ports:
+      - "4020:4000"
+    environment:
+      - PORT=4000
+      - NODE_ENV=production
+      - DATABASE_URL=file:/app/data/database.sqlite
+      - JWT_SECRET=geneatrack_production_secret_key_2026
+    volumes:
+      - geneatrack_data:/app/data
+
+volumes:
+  geneatrack_data:
+    driver: local
